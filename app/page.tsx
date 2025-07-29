@@ -47,7 +47,7 @@ const useKakeiboStore = create<KakeiboState>((set) => ({
   reset: () => set({ file: null, categories: null, error: null, isLoading: false }),
   processCsv: (file: File) => {
     set({ isLoading: true, error: null });
-    
+
     // 楽天e-naviのCSVはShift_JISなので、そのエンコーディングで読み込む
     const reader = new FileReader();
     reader.onload = (e: ProgressEvent<FileReader>) => {
@@ -69,7 +69,7 @@ const useKakeiboStore = create<KakeiboState>((set) => ({
       }
     };
     reader.onerror = () => {
-        set({ error: 'ファイルの読み込み中にエラーが発生しました。', isLoading: false });
+      set({ error: 'ファイルの読み込み中にエラーが発生しました。', isLoading: false });
     };
     reader.readAsText(file, 'Shift_JIS'); // Encoding for Rakuten Card CSV
   },
@@ -80,8 +80,113 @@ const useKakeiboStore = create<KakeiboState>((set) => ({
 const processData = (data: CsvRow[]): Categories => {
   const CONVENIENCE_STORES = ['ｾﾌﾞﾝ-ｲﾚﾌﾞﾝ', 'ﾌｱﾐﾘｰﾏｰﾄ', 'ﾛｰｿﾝ'];
   const SUBSCRIPTIONS = [
-    'chocoZAP', 'ﾁｮｺｻﾞｯﾌﾟ', 'CLAUDE.AI', 'ADOBESYS', 'SCRIBD.C', 
-    'ﾕｰﾈｸｽﾄ', 'AMAZON WEB SERVICES', 'GOOGLE WORKSPACE', 'NETFLIX', 'SPOTIFY'
+    'chocoZAP', 'ﾁｮｺｻﾞｯﾌﾟ', 'CLAUDE.AI', 'ADOBESYS', 'SCRIBD.C',
+    'ﾕｰﾈｸｽﾄ', 'AMAZON WEB SERVICES', 'GOOGLE WORKSPACE', 'NETFLIX', 'SPOTIFY',
+    // --- プラットフォーム共通 (アプリ内決済など) ---
+    'APPLE COM BILL',
+    'APPLE.COM/BILL',
+    'APL*ITUNES.COM/BILL',
+    'GOOGLE*YOUTUBE',
+    'GOOGLE*YOUTUBEPREMIUM',
+    'GOOGLE*DISNEY',
+    'GOOGLE*DMM',
+    'GOOGLE*UNEXT',
+    'GOOGLE*SPOTIFY',
+    'LINE PAY',
+
+    // --- Amazon共通 (Prime Video, Kindle, Audibleなど) ---
+    'AMAZON.CO.JP',
+    'AMZNPRIMEJP',
+    'AMAZON PRIME',
+    'アマゾンジャパン',
+    'AUDIBLE',
+
+    // --- 動画配信 (VOD) ---
+    'NETFLIX.COM',
+    'NETFLIX',
+    'U-NEXT',
+    'USEN',
+    'ユーネクスト',
+    'HULU',
+    'HJホールディングス',
+    'ディズニープラス',
+    'DISNEY PLUS',
+    'DMM.COM',
+    'DMM',
+    'ABEMA',
+    'アベマ',
+
+    // --- 音楽配信 ---
+    'SPOTIFY',
+    'SPOTIFY JAPAN',
+    'LINE MUSIC',
+    'AWA',
+    'AWA株式会社',
+
+    // --- 書籍・雑誌・漫画 ---
+    'Dマガジン',
+    'NTT DOCOMO',
+    'D-MAGAZINE',
+    'ブックホウダイ',
+    'VIEWN',
+    'コミックシーモア',
+    'NTTソルマーレ',
+
+    // --- ゲーム ---
+    'SONY INTERACTIVE',
+    'PLAYSTATION NETWORK',
+    'SIE INC',
+    'MICROSOFT',
+    'MSFT',
+    'NINTENDO',
+    'ニンテンドー',
+
+    // --- ファッション・アパレル ---
+    'AIRCLOSET',
+    'エアークローゼット',
+    'MECHAKARI',
+    'メチャカリ',
+    'RCAWAII',
+    'アールカワイイ',
+    'UWEAR',
+    'ユーウェア',
+    'ANOTHERADDRESS',
+    'アナザーアドレス',
+
+    // --- コスメ・美容 ---
+    'MY LITTLE BOX',
+    'マイリトルボックス',
+    'RAXY',
+    'ラクシー',
+    '楽天', // RAXYは楽天サービスのため
+    'BLOOMBOX',
+    'ブルームボックス',
+    'ISTYLE', // BLOOMBOXの運営会社
+
+    // --- 食品・飲料・宅食 ---
+    'NOSH JP',
+    'ナッシュ',
+    '三ツ星ファーム',
+    'MITSUBOSHI FARM',
+    'OISIX',
+    'オイシックス',
+    'GREEN SPOON',
+    'グリーンスプーン',
+
+    // --- 学習・自己啓発 ---
+    'FLIER',
+    'フライヤー',
+
+    // --- ソフトウェア・その他 ---
+    'ADOBE',
+    'ADOBE SYSTEMS',
+    'KINTO',
+    'キント',
+    'POSTCOFFEE',
+    'ポストコーヒー',
+    'BLOOMEE',
+    'ブルーミー'
+
   ];
 
   const categories: Categories = {
@@ -100,14 +205,14 @@ const processData = (data: CsvRow[]): Categories => {
     // BOMや不要な文字をキーから除去
     const cleanedRow: CsvRow = {};
     for (const key in row) {
-        const cleanedKey = key.replace(/\uFEFF/g, '').trim();
-        cleanedRow[cleanedKey] = row[key];
+      const cleanedKey = key.replace(/\uFEFF/g, '').trim();
+      cleanedRow[cleanedKey] = row[key];
     }
 
     const merchant = cleanedRow['利用店名・商品名'] || '';
     const amountStr = cleanedRow['利用金額'] || '0';
     const amount = parseInt(amountStr.replace(/,/g, ''), 10) || 0;
-    
+
     // 有効な行か（利用日と利用金額があるか）を判定
     if (!cleanedRow['利用日'] || !/^\d{4}\/\d{2}\/\d{2}$/.test(cleanedRow['利用日']) || !merchant || isNaN(amount)) {
       return;
@@ -145,7 +250,7 @@ const processData = (data: CsvRow[]): Categories => {
       categories['少額決済 (JCB)'].total += amount;
       categorized = true;
     }
-    
+
     // 6. その他
     if (!categorized) {
       categories['その他'].items.push(cleanedRow);
@@ -169,63 +274,63 @@ const processData = (data: CsvRow[]): Categories => {
 
 // Header Component
 const AppHeader = () => {
-    const helpText = (
-        <div className="text-left">
-            <h4 className="font-bold mb-2">計算方法について</h4>
-            <ul className="list-disc list-inside space-y-1">
-                <li><strong>コンビニ:</strong> 「セブン-イレブン」「ファミリーマート」「ローソン」が店名に含まれる利用。</li>
-                <li><strong>povo:</strong> 「povo」が店名に含まれる利用。</li>
-                <li><strong>Suica:</strong> 「Ｓｕｉｃａ」が店名に含まれる利用。</li>
-                <li><strong>サブスク:</strong> 事前定義されたリスト（chocoZAP, CLAUDE.AI, Adobe等）に合致する利用。</li>
-                <li><strong>少額決済 (JCB):</strong> 上記以外で1200円以下の「JCB」利用。</li>
-                <li><strong>その他:</strong> 上記のいずれにも当てはまらない利用。合計金額はCSVの9列目（「X月支払金額」）を使用します。</li>
-            </ul>
-            <p className="mt-3 pt-2 border-t border-gray-600">
-                計算はすべてお使いのブラウザ内で完結し、外部にデータが送信されることはありません。
-            </p>
-        </div>
-    );
+  const helpText = (
+    <div className="text-left">
+      <h4 className="font-bold mb-2">計算方法について</h4>
+      <ul className="list-disc list-inside space-y-1">
+        <li><strong>コンビニ:</strong> 「セブン-イレブン」「ファミリーマート」「ローソン」が店名に含まれる利用。</li>
+        <li><strong>povo:</strong> 「povo」が店名に含まれる利用。</li>
+        <li><strong>Suica:</strong> 「Ｓｕｉｃａ」が店名に含まれる利用。</li>
+        <li><strong>サブスク:</strong> 事前定義されたリスト（chocoZAP, CLAUDE.AI, Adobe等）に合致する利用。</li>
+        <li><strong>少額決済 (JCB):</strong> 上記以外で1200円以下の「JCB」利用。</li>
+        <li><strong>その他:</strong> 上記のいずれにも当てはまらない利用。合計金額はCSVの9列目（「X月支払金額」）を使用します。</li>
+      </ul>
+      <p className="mt-3 pt-2 border-t border-gray-600">
+        計算はすべてお使いのブラウザ内で完結し、外部にデータが送信されることはありません。
+      </p>
+    </div>
+  );
 
-    return (
-        <header className="text-center p-8 bg-gradient-to-b from-green-50 to-green-100">
-            <h1 className="text-4xl md:text-5xl font-bold text-green-800 mb-2">
-                かんたん家計簿
-            </h1>
-            <p className="text-green-700 max-w-2xl mx-auto mb-4">
-                楽天カードの利用明細CSVをアップロードするだけで、支出を自動でカテゴリ分けします。
-            </p>
-            <div className="flex justify-center items-center gap-4">
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-green-700 hover:text-green-900">
-                                <HelpCircle className="h-6 w-6" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="max-w-md">
-                            {helpText}
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-                <Button asChild className="bg-green-600 hover:bg-green-700">
-                    <a 
-                        href="https://login.account.rakuten.com/sso/authorize?client_id=rakuten_card_enavi_web&redirect_uri=https://www.rakuten-card.co.jp/e-navi/auth/login.xhtml&scope=openid%20profile&response_type=code&prompt=login#/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                    >
-                        楽天e-NAVIへ
-                    </a>
-                </Button>
-            </div>
-        </header>
-    );
+  return (
+    <header className="text-center p-8 bg-gradient-to-b from-green-50 to-green-100">
+      <h1 className="text-4xl md:text-5xl font-bold text-green-800 mb-2">
+        かんたん家計簿
+      </h1>
+      <p className="text-green-700 max-w-2xl mx-auto mb-4">
+        楽天カードの利用明細CSVをアップロードするだけで、支出を自動でカテゴリ分けします。
+      </p>
+      <div className="flex justify-center items-center gap-4">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-green-700 hover:text-green-900">
+                <HelpCircle className="h-6 w-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-md">
+              {helpText}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <Button asChild className="bg-green-600 hover:bg-green-700">
+          <a
+            href="https://login.account.rakuten.com/sso/authorize?client_id=rakuten_card_enavi_web&redirect_uri=https://www.rakuten-card.co.jp/e-navi/auth/login.xhtml&scope=openid%20profile&response_type=code&prompt=login#/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            楽天e-NAVIへ
+          </a>
+        </Button>
+      </div>
+    </header>
+  );
 };
 
 
 // CSV Uploader Component
 const CsvUploader = () => {
   const { setFile, processCsv } = useKakeiboStore();
-  
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
@@ -250,14 +355,14 @@ const CsvUploader = () => {
         <div
           {...getRootProps()}
           className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all duration-300 
-            ${isDragActive 
-              ? 'border-primary bg-accent' 
+            ${isDragActive
+              ? 'border-primary bg-accent'
               : 'border-muted-foreground/25 hover:border-primary hover:bg-accent/50'
             }`}
         >
           <input {...getInputProps()} />
           <div className="flex flex-col items-center justify-center space-y-4">
-            <UploadCloud className={`h-16 w-16 ${isDragActive ? 'text-primary' : 'text-muted-foreground'}`}/>
+            <UploadCloud className={`h-16 w-16 ${isDragActive ? 'text-primary' : 'text-muted-foreground'}`} />
             {isDragActive ? (
               <p className="text-xl font-semibold text-primary">ここにファイルをドロップ</p>
             ) : (
@@ -288,7 +393,7 @@ const ResultsDisplay = () => {
       </Card>
     );
   }
-  
+
   if (error) {
     return (
       <Card className="w-full max-w-2xl mx-auto border-destructive">
@@ -307,8 +412,8 @@ const ResultsDisplay = () => {
 
   if (!categories) return null;
 
-  const paymentMonthColumn = categories[Object.keys(categories)[0]]?.items.length > 0 
-    ? Object.keys(categories[Object.keys(categories)[0]].items[0])[8] 
+  const paymentMonthColumn = categories[Object.keys(categories)[0]]?.items.length > 0
+    ? Object.keys(categories[Object.keys(categories)[0]].items[0])[8]
     : '8月支払金額';
 
   return (
@@ -317,17 +422,17 @@ const ResultsDisplay = () => {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-muted-foreground"/>
+              <FileText className="h-5 w-5 text-muted-foreground" />
               <span className="font-medium">{file?.name}</span>
             </div>
             <Button onClick={reset} variant="ghost" size="sm">
-              <X className="h-4 w-4 mr-2"/>
+              <X className="h-4 w-4 mr-2" />
               クリア
             </Button>
           </div>
         </CardHeader>
       </Card>
-      
+
       <Accordion type="single" collapsible className="space-y-2">
         {Object.entries(categories).map(([category, data]) => (
           <AccordionItem key={category} value={category} className="border rounded-lg">
@@ -377,16 +482,16 @@ const ResultsDisplay = () => {
 
 // Footer Component
 const AppFooter = () => (
-    <footer className="text-center p-8 mt-16 border-t">
-        <div className="flex justify-center items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-                <a href="https://github.com/Tsukichan555" target="_blank" rel="noopener noreferrer">
-                    <Github className="h-5 w-5" />
-                </a>
-            </Button>
-            <p className="text-muted-foreground">&copy; Tsukichan 2025</p>
-        </div>
-    </footer>
+  <footer className="text-center p-8 mt-16 border-t">
+    <div className="flex justify-center items-center gap-4">
+      <Button variant="ghost" size="icon" asChild>
+        <a href="https://github.com/Tsukichan555" target="_blank" rel="noopener noreferrer">
+          <Github className="h-5 w-5" />
+        </a>
+      </Button>
+      <p className="text-muted-foreground">&copy; Tsukichan 2025</p>
+    </div>
+  </footer>
 );
 
 
