@@ -4,6 +4,11 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import { create } from 'zustand';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { HelpCircle, Github, UploadCloud, FileText, X } from 'lucide-react';
 
 // Type definitions
 interface CsvRow {
@@ -29,63 +34,6 @@ interface KakeiboState {
   processCsv: (file: File) => void;
 }
 
-interface IconProps {
-  className?: string;
-  [key: string]: any;
-}
-
-interface TooltipProps {
-  children: React.ReactNode;
-  text: React.ReactNode;
-}
-
-// --- Icon Components (using inline SVG) ---
-// Using inline SVGs because external libraries like lucide-react might not be available.
-const HelpCircle = (props: IconProps) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-    <path d="M12 17h.01" />
-  </svg>
-);
-
-const Github = (props: IconProps) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-    <path d="M9 18c-4.51 2-5-2-7-2" />
-  </svg>
-);
-
-const UploadCloud = (props: IconProps) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
-        <path d="M12 12v9" />
-        <path d="m16 16-4-4-4 4" />
-    </svg>
-);
-
-const FileText = (props: IconProps) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-        <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-        <path d="M16 13H8" />
-        <path d="M16 17H8" />
-        <path d="M10 9H8" />
-    </svg>
-);
-
-const ChevronDown = (props: IconProps) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="m6 9 6 6 6-6" />
-    </svg>
-);
-
-const X = (props: IconProps) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 6 6 18" />
-        <path d="m6 6 12 12" />
-    </svg>
-);
 
 
 // --- Zustand Store for State Management ---
@@ -219,18 +167,6 @@ const processData = (data: CsvRow[]): Categories => {
 
 // --- UI Components ---
 
-// Tooltip Component
-const Tooltip = ({ children, text }: TooltipProps) => {
-  return (
-    <div className="relative flex items-center group">
-      {children}
-      <div className="absolute bottom-full mb-2 w-64 p-2 text-sm text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-        {text}
-      </div>
-    </div>
-  );
-};
-
 // Header Component
 const AppHeader = () => {
     const helpText = (
@@ -251,25 +187,35 @@ const AppHeader = () => {
     );
 
     return (
-        <header className="text-center p-8 bg-cream-100">
+        <header className="text-center p-8 bg-gradient-to-b from-green-50 to-green-100">
             <h1 className="text-4xl md:text-5xl font-bold text-green-800 mb-2">
                 かんたん家計簿
             </h1>
-            <p className="text-green-700 max-w-2xl mx-auto">
+            <p className="text-green-700 max-w-2xl mx-auto mb-4">
                 楽天カードの利用明細CSVをアップロードするだけで、支出を自動でカテゴリ分けします。
             </p>
-            <div className="flex justify-center items-center gap-4 mt-4">
-                <Tooltip text={helpText}>
-                    <HelpCircle className="h-6 w-6 text-green-700 cursor-pointer hover:text-green-900" />
-                </Tooltip>
-                <a 
-                    href="https://login.account.rakuten.com/sso/authorize?client_id=rakuten_card_enavi_web&redirect_uri=https://www.rakuten-card.co.jp/e-navi/auth/login.xhtml&scope=openid%20profile&response_type=code&prompt=login#/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition-colors"
-                >
-                    楽天e-NAVIへ
-                </a>
+            <div className="flex justify-center items-center gap-4">
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-green-700 hover:text-green-900">
+                                <HelpCircle className="h-6 w-6" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-md">
+                            {helpText}
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                <Button asChild className="bg-green-600 hover:bg-green-700">
+                    <a 
+                        href="https://login.account.rakuten.com/sso/authorize?client_id=rakuten_card_enavi_web&redirect_uri=https://www.rakuten-card.co.jp/e-navi/auth/login.xhtml&scope=openid%20profile&response_type=code&prompt=login#/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                    >
+                        楽天e-NAVIへ
+                    </a>
+                </Button>
             </div>
         </header>
     );
@@ -299,46 +245,63 @@ const CsvUploader = () => {
   });
 
   return (
-    <div
-      {...getRootProps()}
-      className={`border-4 border-dashed rounded-2xl p-10 md:p-20 text-center cursor-pointer transition-colors duration-300
-        ${isDragActive ? 'border-green-500 bg-green-50' : 'border-green-200 hover:border-green-400'}`}
-    >
-      <input {...getInputProps()} />
-      <div className="flex flex-col items-center justify-center text-green-700">
-        <UploadCloud className="h-16 w-16 mb-4"/>
-        {isDragActive ? (
-          <p className="text-xl font-semibold">ここにファイルをドロップ</p>
-        ) : (
-          <p className="text-xl font-semibold">CSVファイルをここにドラッグ＆ドロップ<br />またはクリックして選択</p>
-        )}
-        <p className="text-sm mt-2">楽天e-NAVIからダウンロードした利用明細CSVに対応しています。</p>
-      </div>
-    </div>
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardContent className="p-8">
+        <div
+          {...getRootProps()}
+          className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all duration-300 
+            ${isDragActive 
+              ? 'border-primary bg-accent' 
+              : 'border-muted-foreground/25 hover:border-primary hover:bg-accent/50'
+            }`}
+        >
+          <input {...getInputProps()} />
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <UploadCloud className={`h-16 w-16 ${isDragActive ? 'text-primary' : 'text-muted-foreground'}`}/>
+            {isDragActive ? (
+              <p className="text-xl font-semibold text-primary">ここにファイルをドロップ</p>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xl font-semibold">CSVファイルをドラッグ＆ドロップ</p>
+                <p className="text-muted-foreground">またはクリックして選択</p>
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground">楽天e-NAVIからダウンロードした利用明細CSVに対応</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
 // Results Display Component
 const ResultsDisplay = () => {
   const { categories, file, isLoading, error, reset } = useKakeiboStore();
-  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
   if (isLoading) {
-    return <div className="text-center p-10">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mx-auto"></div>
-        <p className="mt-4 text-green-800">計算中...</p>
-    </div>;
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="flex flex-col items-center justify-center p-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="mt-4 text-lg font-medium">計算中...</p>
+        </CardContent>
+      </Card>
+    );
   }
   
   if (error) {
     return (
-        <div className="text-center p-10 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700 font-semibold">エラーが発生しました</p>
-            <p className="text-red-600 mt-2">{error}</p>
-            <button onClick={reset} className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
-                やり直す
-            </button>
-        </div>
+      <Card className="w-full max-w-2xl mx-auto border-destructive">
+        <CardHeader>
+          <CardTitle className="text-destructive">エラーが発生しました</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">{error}</p>
+          <Button onClick={reset} variant="destructive">
+            やり直す
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -349,78 +312,79 @@ const ResultsDisplay = () => {
     : '8月支払金額';
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2 text-gray-600">
-                <FileText className="h-5 w-5"/>
-                <span>{file?.name}</span>
+    <div className="w-full max-w-4xl mx-auto space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-muted-foreground"/>
+              <span className="font-medium">{file?.name}</span>
             </div>
-            <button onClick={reset} className="flex items-center gap-1 text-red-500 hover:text-red-700">
-                <X className="h-4 w-4"/>
-                <span>クリア</span>
-            </button>
-        </div>
-        <div className="space-y-2">
-            {Object.entries(categories).map(([category, data]) => (
-                <div key={category} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-                    <button 
-                        onClick={() => setOpenAccordion(openAccordion === category ? null : category)}
-                        className="w-full flex justify-between items-center p-4 text-left hover:bg-gray-50 transition-colors"
-                    >
-                        <span className="text-lg font-medium text-gray-800">{category}</span>
-                        <div className="flex items-center gap-4">
-                            <span className="text-lg font-bold text-green-700">
-                                {(data as Category).total.toLocaleString()} 円
-                            </span>
-                            <ChevronDown className={`h-6 w-6 text-gray-500 transition-transform ${openAccordion === category ? 'rotate-180' : ''}`} />
-                        </div>
-                    </button>
-                    {openAccordion === category && (
-                        <div className="bg-gray-50 p-4 border-t border-gray-200">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-                                        <tr>
-                                            <th className="px-4 py-2">利用日</th>
-                                            <th className="px-4 py-2">利用店名・商品名</th>
-                                            <th className="px-4 py-2 text-right">利用金額</th>
-                                            {category === 'その他' && <th className="px-4 py-2 text-right">{paymentMonthColumn}</th>}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {(data as Category).items.map((item: CsvRow, index: number) => {
-                                            const cleanedItem = Object.fromEntries(Object.entries(item).map(([k, v]) => [k.replace(/\uFEFF/g, '').trim(), v]));
-                                            const amount = parseInt((cleanedItem['利用金額'] || '0').replace(/,/g, ''), 10) || 0;
-                                            const otherAmount = category === 'その他' && paymentMonthColumn ? parseInt((cleanedItem[paymentMonthColumn] || '0').replace(/,/g, ''), 10) || 0 : 0;
-                                            return (
-                                                <tr key={index} className="border-b last:border-b-0 hover:bg-white">
-                                                    <td className="px-4 py-2 whitespace-nowrap">{cleanedItem['利用日'] as React.ReactNode}</td>
-                                                    <td className="px-4 py-2">{cleanedItem['利用店名・商品名'] as React.ReactNode}</td>
-                                                    <td className="px-4 py-2 text-right whitespace-nowrap">{amount.toLocaleString()} 円</td>
-                                                    {category === 'その他' && <td className="px-4 py-2 text-right whitespace-nowrap">{otherAmount.toLocaleString()} 円</td>}
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            ))}
-        </div>
+            <Button onClick={reset} variant="ghost" size="sm">
+              <X className="h-4 w-4 mr-2"/>
+              クリア
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
+      
+      <Accordion type="single" collapsible className="space-y-2">
+        {Object.entries(categories).map(([category, data]) => (
+          <AccordionItem key={category} value={category} className="border rounded-lg">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex justify-between items-center w-full">
+                <span className="text-lg font-medium">{category}</span>
+                <span className="text-lg font-bold text-primary mr-4">
+                  {(data as Category).total.toLocaleString()} 円
+                </span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="border-b">
+                    <tr className="text-left">
+                      <th className="pb-2">利用日</th>
+                      <th className="pb-2">利用店名・商品名</th>
+                      <th className="pb-2 text-right">利用金額</th>
+                      {category === 'その他' && <th className="pb-2 text-right">{paymentMonthColumn}</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {(data as Category).items.map((item: CsvRow, index: number) => {
+                      const cleanedItem = Object.fromEntries(Object.entries(item).map(([k, v]) => [k.replace(/\uFEFF/g, '').trim(), v]));
+                      const amount = parseInt((cleanedItem['利用金額'] || '0').replace(/,/g, ''), 10) || 0;
+                      const otherAmount = category === 'その他' && paymentMonthColumn ? parseInt((cleanedItem[paymentMonthColumn] || '0').replace(/,/g, ''), 10) || 0 : 0;
+                      return (
+                        <tr key={index} className="hover:bg-muted/50">
+                          <td className="py-2 whitespace-nowrap">{cleanedItem['利用日'] as React.ReactNode}</td>
+                          <td className="py-2">{cleanedItem['利用店名・商品名'] as React.ReactNode}</td>
+                          <td className="py-2 text-right whitespace-nowrap">{amount.toLocaleString()} 円</td>
+                          {category === 'その他' && <td className="py-2 text-right whitespace-nowrap">{otherAmount.toLocaleString()} 円</td>}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
     </div>
   );
 };
 
 // Footer Component
 const AppFooter = () => (
-    <footer className="text-center p-4 mt-8 text-gray-500">
+    <footer className="text-center p-8 mt-16 border-t">
         <div className="flex justify-center items-center gap-4">
-            <a href="https://github.com/Tsukichan" target="_blank" rel="noopener noreferrer" className="hover:text-gray-800">
-                <Github className="h-6 w-6" />
-            </a>
-            <p>&copy; Tsukichan 2025</p>
+            <Button variant="ghost" size="icon" asChild>
+                <a href="https://github.com/Tsukichan555" target="_blank" rel="noopener noreferrer">
+                    <Github className="h-5 w-5" />
+                </a>
+            </Button>
+            <p className="text-muted-foreground">&copy; Tsukichan 2025</p>
         </div>
     </footer>
 );
@@ -431,31 +395,12 @@ export default function App() {
   const { file } = useKakeiboStore();
 
   return (
-    <div className="min-h-screen bg-cream-50 font-sans text-gray-800">
+    <div className="min-h-screen bg-background">
       <AppHeader />
       <main className="container mx-auto px-4 py-8">
         {!file ? <CsvUploader /> : <ResultsDisplay />}
       </main>
       <AppFooter />
-      {/* Script for PapaParse */}
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-      {/* Custom Styles */}
-      <style jsx global>{`
-        body {
-          background-color: #FEFBF6; /* cream-50 */
-        }
-        .bg-cream-50 { background-color: #FEFBF6; }
-        .bg-cream-100 { background-color: #F8F0E3; }
-        .text-green-700 { color: #3D550C; }
-        .text-green-800 { color: #2C3E0A; }
-        .text-green-900 { color: #1E2A07; }
-        .border-green-200 { border-color: #C2DDB4; }
-        .border-green-400 { border-color: #A3C990; }
-        .border-green-500 { border-color: #84B56C; }
-        .bg-green-50 { background-color: #F0F7E9; }
-        .bg-green-600 { background-color: #6A994E; }
-        .bg-green-700 { background-color: #3D550C; }
-      `}</style>
     </div>
   );
 }
