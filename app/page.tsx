@@ -1,11 +1,47 @@
-import React, { useState, useCallback, useMemo } from 'react';
+'use client';
+
+import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import { create } from 'zustand';
 
+// Type definitions
+interface CsvRow {
+  [key: string]: string;
+}
+
+interface Category {
+  total: number;
+  items: CsvRow[];
+}
+
+interface Categories {
+  [categoryName: string]: Category;
+}
+
+interface KakeiboState {
+  file: File | null;
+  categories: Categories | null;
+  isLoading: boolean;
+  error: string | null;
+  setFile: (file: File) => void;
+  reset: () => void;
+  processCsv: (file: File) => void;
+}
+
+interface IconProps {
+  className?: string;
+  [key: string]: any;
+}
+
+interface TooltipProps {
+  children: React.ReactNode;
+  text: React.ReactNode;
+}
+
 // --- Icon Components (using inline SVG) ---
 // Using inline SVGs because external libraries like lucide-react might not be available.
-const HelpCircle = (props) => (
+const HelpCircle = (props: IconProps) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" />
     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
@@ -13,14 +49,14 @@ const HelpCircle = (props) => (
   </svg>
 );
 
-const Github = (props) => (
+const Github = (props: IconProps) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
     <path d="M9 18c-4.51 2-5-2-7-2" />
   </svg>
 );
 
-const UploadCloud = (props) => (
+const UploadCloud = (props: IconProps) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
         <path d="M12 12v9" />
@@ -28,7 +64,7 @@ const UploadCloud = (props) => (
     </svg>
 );
 
-const FileText = (props) => (
+const FileText = (props: IconProps) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
         <path d="M14 2v4a2 2 0 0 0 2 2h4" />
@@ -38,13 +74,13 @@ const FileText = (props) => (
     </svg>
 );
 
-const ChevronDown = (props) => (
+const ChevronDown = (props: IconProps) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="m6 9 6 6 6-6" />
     </svg>
 );
 
-const X = (props) => (
+const X = (props: IconProps) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M18 6 6 18" />
         <path d="m6 6 12 12" />
@@ -54,34 +90,34 @@ const X = (props) => (
 
 // --- Zustand Store for State Management ---
 // アプリケーションの状態を管理するためのZustandストア
-const useKakeiboStore = create((set) => ({
+const useKakeiboStore = create<KakeiboState>((set) => ({
   file: null,
   categories: null,
   isLoading: false,
   error: null,
-  setFile: (file) => set({ file, categories: null, error: null }),
+  setFile: (file: File) => set({ file, categories: null, error: null }),
   reset: () => set({ file: null, categories: null, error: null, isLoading: false }),
-  processCsv: (file) => {
+  processCsv: (file: File) => {
     set({ isLoading: true, error: null });
     
     // 楽天e-naviのCSVはShift_JISなので、そのエンコーディングで読み込む
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = (e: ProgressEvent<FileReader>) => {
       try {
-        const text = e.target.result;
-        Papa.parse(text, {
+        const text = e.target?.result as string;
+        Papa.parse<CsvRow>(text, {
           header: true,
           skipEmptyLines: true,
-          complete: (results) => {
+          complete: (results: Papa.ParseResult<CsvRow>) => {
             const processedData = processData(results.data);
             set({ categories: processedData, isLoading: false });
           },
-          error: (err) => {
+          error: (err: Error) => {
             set({ error: `CSVの解析に失敗しました: ${err.message}`, isLoading: false });
           }
         });
-      } catch (err) {
-        set({ error: `ファイルの読み込みに失敗しました: ${err.message}`, isLoading: false });
+      } catch (err: unknown) {
+        set({ error: `ファイルの読み込みに失敗しました: ${err instanceof Error ? err.message : 'Unknown error'}`, isLoading: false });
       }
     };
     reader.onerror = () => {
@@ -93,14 +129,14 @@ const useKakeiboStore = create((set) => ({
 
 // --- Data Processing Logic ---
 // CSVデータを分類し、集計するコアロジック
-const processData = (data) => {
+const processData = (data: CsvRow[]): Categories => {
   const CONVENIENCE_STORES = ['ｾﾌﾞﾝ-ｲﾚﾌﾞﾝ', 'ﾌｱﾐﾘｰﾏｰﾄ', 'ﾛｰｿﾝ'];
   const SUBSCRIPTIONS = [
     'chocoZAP', 'ﾁｮｺｻﾞｯﾌﾟ', 'CLAUDE.AI', 'ADOBESYS', 'SCRIBD.C', 
     'ﾕｰﾈｸｽﾄ', 'AMAZON WEB SERVICES', 'GOOGLE WORKSPACE', 'NETFLIX', 'SPOTIFY'
   ];
 
-  const categories = {
+  const categories: Categories = {
     'コンビニ': { total: 0, items: [] },
     'povo': { total: 0, items: [] },
     'サブスク': { total: 0, items: [] },
@@ -112,9 +148,9 @@ const processData = (data) => {
   // 9列目のカラム名を取得（"X月支払金額"など変動するため）
   const paymentMonthColumn = data.length > 0 ? Object.keys(data[0])[8] : null;
 
-  data.forEach(row => {
+  data.forEach((row: CsvRow) => {
     // BOMや不要な文字をキーから除去
-    const cleanedRow = {};
+    const cleanedRow: CsvRow = {};
     for (const key in row) {
         const cleanedKey = key.replace(/\uFEFF/g, '').trim();
         cleanedRow[cleanedKey] = row[key];
@@ -178,13 +214,13 @@ const processData = (data) => {
     .reduce((acc, [key, value]) => {
       acc[key] = value;
       return acc;
-    }, {});
+    }, {} as Categories);
 };
 
 // --- UI Components ---
 
 // Tooltip Component
-const Tooltip = ({ children, text }) => {
+const Tooltip = ({ children, text }: TooltipProps) => {
   return (
     <div className="relative flex items-center group">
       {children}
@@ -244,7 +280,7 @@ const AppHeader = () => {
 const CsvUploader = () => {
   const { setFile, processCsv } = useKakeiboStore();
   
-  const onDrop = useCallback((acceptedFiles) => {
+  const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
       if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
@@ -285,7 +321,7 @@ const CsvUploader = () => {
 // Results Display Component
 const ResultsDisplay = () => {
   const { categories, file, isLoading, error, reset } = useKakeiboStore();
-  const [openAccordion, setOpenAccordion] = useState(null);
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
   if (isLoading) {
     return <div className="text-center p-10">
@@ -317,7 +353,7 @@ const ResultsDisplay = () => {
         <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2 text-gray-600">
                 <FileText className="h-5 w-5"/>
-                <span>{file.name}</span>
+                <span>{file?.name}</span>
             </div>
             <button onClick={reset} className="flex items-center gap-1 text-red-500 hover:text-red-700">
                 <X className="h-4 w-4"/>
@@ -334,7 +370,7 @@ const ResultsDisplay = () => {
                         <span className="text-lg font-medium text-gray-800">{category}</span>
                         <div className="flex items-center gap-4">
                             <span className="text-lg font-bold text-green-700">
-                                {data.total.toLocaleString()} 円
+                                {(data as Category).total.toLocaleString()} 円
                             </span>
                             <ChevronDown className={`h-6 w-6 text-gray-500 transition-transform ${openAccordion === category ? 'rotate-180' : ''}`} />
                         </div>
@@ -352,14 +388,14 @@ const ResultsDisplay = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {data.items.map((item, index) => {
+                                        {(data as Category).items.map((item: CsvRow, index: number) => {
                                             const cleanedItem = Object.fromEntries(Object.entries(item).map(([k, v]) => [k.replace(/\uFEFF/g, '').trim(), v]));
                                             const amount = parseInt((cleanedItem['利用金額'] || '0').replace(/,/g, ''), 10) || 0;
                                             const otherAmount = category === 'その他' && paymentMonthColumn ? parseInt((cleanedItem[paymentMonthColumn] || '0').replace(/,/g, ''), 10) || 0 : 0;
                                             return (
                                                 <tr key={index} className="border-b last:border-b-0 hover:bg-white">
-                                                    <td className="px-4 py-2 whitespace-nowrap">{cleanedItem['利用日']}</td>
-                                                    <td className="px-4 py-2">{cleanedItem['利用店名・商品名']}</td>
+                                                    <td className="px-4 py-2 whitespace-nowrap">{cleanedItem['利用日'] as React.ReactNode}</td>
+                                                    <td className="px-4 py-2">{cleanedItem['利用店名・商品名'] as React.ReactNode}</td>
                                                     <td className="px-4 py-2 text-right whitespace-nowrap">{amount.toLocaleString()} 円</td>
                                                     {category === 'その他' && <td className="px-4 py-2 text-right whitespace-nowrap">{otherAmount.toLocaleString()} 円</td>}
                                                 </tr>
