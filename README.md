@@ -2,35 +2,94 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## このアプリは次の指示によって作成されました
+### タスク
+簡易家計簿webアプリを作る
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 概要
+URLにアクセスすると、CSVをアップするだけで、先ほどやってもらったような計算ができ、出費の振り返りができる。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+### 利用者
+私のみ
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 仕様
+#### ヒーロー的なエリア：
+アプリのタイトル・アプリの概要がある。その付近のはてなアイコンにホバーでツールチップを表示し、具体的な計算方法（ジャンル振り分けのルールやCSVのどのカラムをどう用いるか、計算がローカル(Javascript)で行われる旨の説明）が示される。楽天e-naviへのリンクも掲載（`https://login.account.rakuten.com/sso/authorize?client_id=rakuten_card_enavi_web&redirect_uri=https://www.rakuten-card.co.jp/e-navi/auth/login.xhtml&scope=openid%20profile&response_type=code&prompt=login#/sign_in`、新しいタブで開く）。
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### ユーザーフロー：
+ドラッグ&ドロップでCSVを読み込ませる > 計算が終わると、「コンビニ」「povo」「サブスク」「suica」「少額決済」の行と、各行の合計額が表示される。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+#### 利用詳細機能：
+行の右端にはドロップダウン(ホバーで「利用詳細」のツールチップ)のアイコンがあり、クリックすると、当てはまる行が全て下に表示される。各行には、利用日、利用店名・商品名、利用金額、のカラムが表示される。
+Footer：「(c)Tsukichan 2025」みたいな表示。Footer内にGithubのリンクを掲載。
+
+
+
+#### その他：
+ログイン機能はなし
+計算はローカルで行われる
+カード利用項目のジャンル振り分けはルールベースで行われる
+
+
+
+
+### 利用ジャンルについて
+「コンビニ」「povo」「サブスク」「suica」「少額決済」の4つ。
+コンビニ：利用店名・商品名に主要コンビニ各社の名前が含まれていたら該当
+povo/suica: 利用店名・商品名にpovo/suicaが含まれていたら該当
+サブスク: 主要サブスク名リストを作り、リストに含まれる文字列が利用店名・商品名に含まれていたら該当。
+少額決済: 上記のいずれにも当てはまらない場合で、1200円以下のJCBの利用の場合該当
+
+
+
+
+
+### 設計
+SPA/CSR
+shadcn/ui+React+Zustand+Next.js(App Router)
+Vercelでデプロイする予定
+
+
+
+### デザイン
+
+家庭的な親しみやすさのあ
+美しいレイアウトとぱっと見での使い方のわかりやすさがある。
+使いやすい・読みやすい。クリックしやすい。
+洗練された雰囲気。
+レスポンシブで、タブレットやスマホの環境でも美しいレイアウトとぱっと見での使い方のわかりやすさがある。
+
+## 実装の概要
+アプリケーションの概要と使い方
+
+### コンポーネント構成:
+App: 全体を統括するメインコンポーネントです。
+AppHeader: タイトルや説明、楽天e-NAVIへのリンクを持つヘッダーです。
+CsvUploader: ドラッグ＆ドロップでCSVファイルをアップロードするエリアです。
+ResultsDisplay: 解析結果をカテゴリごとに表示するアコーディオン形式のコンポーネントです。
+AppFooter: コピーライトとGitHubへのリンクを含むフッターです。
+
+### 状態管理 (Zustand):
+アップロードされたファイル(file)、解析結果(categories)、ローディング状態(isLoading)などを一元管理しています。
+processCsv関数内で、CSVの読み込み（FileReader）、解析（PapaParse）、そして独自のprocessData関数によるデータ分類と集計を行っています。
+
+### データ処理:
+楽天カードのCSVがShift_JISエンコーディングであることに対応しています。
+コンビニ名やサブスクリプションサービスのキーワードを配列で定義し、利用店名・商品名にそれらが含まれるかどうかでカテゴリを判定します。
+ご要望の通り、「その他」カテゴリの合計金額はCSVの9列目（月の支払額）を使用するように実装しました。
+
+### UI/UX:
+親しみやすいクリーム色と緑を基調としたカラーパレットを採用しました。
+shadcn/uiの思想に基づき、インラインSVGアイコンや自前のTooltipコンポーネントを実装し、モダンでクリーンなデザインを実現しています。
+アコーディオン形式で結果を表示することで、最初は概要のみを提示し、クリックすることで詳細を確認できる直感的なインターフェースにしました。
+レスポンシブデザインに対応しており、PC、タブレット、スマートフォンなど、どのデバイスでも快適に利用できます。
+
