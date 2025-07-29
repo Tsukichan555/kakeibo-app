@@ -5,7 +5,7 @@
 ## 🌟 デモ
 
 <!-- TODO: Vercelのデプロイ後にリンクを挿入 -->
-[こちらから使えます](vercel-link-to-be-inserted)
+[こちらから使えます](https://kakeibo-app-five.vercel.app/)
 
 ## ✨ 主な機能
 
@@ -71,7 +71,3 @@ npm run dev
 ```bash
 npm run build
 ```
-
-## 📄 ライセンス
-
-© Tsukichan 2025
